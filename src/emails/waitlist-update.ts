@@ -1,54 +1,14 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import type { BroadcastTemplate } from "./types.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Cloudinary CDN — using w_600/w_192 transforms so email clients receive
+// correctly-sized images without downloading the full originals.
+const bannerSrc =
+  process.env.BANNER_URL ??
+  "https://res.cloudinary.com/dwnxxkjwg/image/upload/w_540,q_auto,f_png/v1772207176/banner_wwikkg.png";
 
-/**
- * Returns a public HTTPS URL for an image asset.
- *
- * Set IMAGE_BASE_URL in your .env to the public root where banner.png and
- * logo.png are hosted (e.g. https://bloxplatform.org/emails).
- *
- * Without IMAGE_BASE_URL the function falls back to a base64 data URI for
- * local preview only — data URIs are stripped by Gmail, Yahoo, and Outlook
- * and will cause the email to be clipped if the file is large.
- */
-function getImageSrc(fileName: string): string {
-  const base = process.env.IMAGE_BASE_URL?.replace(/\/+$/, "");
-  if (base) {
-    return `${base}/${fileName}`;
-  }
-
-  // --- base64 fallback (local dev / dry-run preview only) ---
-  console.warn(
-    `[WARN] IMAGE_BASE_URL is not set. Falling back to base64 for "${fileName}". ` +
-      `Data URIs are blocked by Gmail, Outlook, and Yahoo Mail. ` +
-      `Add IMAGE_BASE_URL=https://your-domain.com/path to your .env file.`,
-  );
-  const candidates = [
-    path.resolve(process.cwd(), "src", fileName),
-    path.resolve(process.cwd(), "dist", fileName),
-    path.resolve(__dirname, "..", fileName),
-  ];
-  const filePath = candidates.find((p) => fs.existsSync(p));
-  if (!filePath) return `https://example.com/${fileName}`;
-  const ext = path.extname(fileName).toLowerCase();
-  const mime =
-    ext === ".png"
-      ? "image/png"
-      : ext === ".jpg" || ext === ".jpeg"
-        ? "image/jpeg"
-        : ext === ".webp"
-          ? "image/webp"
-          : "image/gif";
-  return `data:${mime};base64,${fs.readFileSync(filePath).toString("base64")}`;
-}
-
-const bannerSrc = getImageSrc("banner.png");
-const logoSrc = getImageSrc("logo.png");
+const logoSrc =
+  process.env.LOGO_URL ??
+  "https://res.cloudinary.com/dwnxxkjwg/image/upload/w_192,q_auto,f_png/v1772207176/logo_hgm43f.png";
 
 export const waitlistUpdateTemplate: BroadcastTemplate = {
   id: "waitlist-update",
@@ -70,13 +30,8 @@ export const waitlistUpdateTemplate: BroadcastTemplate = {
               </td>
             </tr>
 
-            <!-- Hero Banner — edge-to-edge, no padding -->
-            <tr>
-              <td style="padding:0;line-height:0;font-size:0;">
-                <img src="${bannerSrc}" alt="Blox — Build your brand with AI" width="600" style="display:block;width:100%;height:auto;border:0;" />
-              </td>
-            </tr>
-
+            <!-- Hero Banner — inset with dark bg matching the header -->
+            
             <!-- Intro -->
             <tr>
               <td style="padding:36px 36px 0;">
@@ -84,6 +39,9 @@ export const waitlistUpdateTemplate: BroadcastTemplate = {
                 <h1 style="margin:0 0 20px;font-size:27px;font-weight:700;line-height:1.3;color:#0f172a;">
                   Hi {{{FIRST_NAME|there}}}, your perks are locked in.
                 </h1>
+                <p style="margin:0 0 18px;font-size:13px;line-height:1.7;color:#94a3b8;border-left:3px solid #e2e8f0;padding-left:12px;">
+                  Quick note: If you got a mistaken or duplicate email from us recently, please ignore it — sorry about that mix-up!
+                </p>
                 <p style="margin:0 0 16px;font-size:16px;line-height:1.8;color:#475569;">
                   Thank you for joining the Blox waitlist. You signed up before most people even knew we existed — and that means something to us.
                 </p>
@@ -133,13 +91,24 @@ export const waitlistUpdateTemplate: BroadcastTemplate = {
                         </tr>
                       </table>
 
-                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:16px;">
                         <tr>
                           <td width="26" valign="top" style="padding-top:1px;">
                             <table role="presentation" cellspacing="0" cellpadding="0"><tr><td style="width:20px;height:20px;background:#0ea5e9;border-radius:50%;text-align:center;font-size:11px;font-weight:700;color:#ffffff;line-height:20px;">&#10003;</td></tr></table>
                           </td>
                           <td style="padding-left:12px;font-size:15px;color:#0f172a;line-height:1.6;">
                             <strong>Exclusive Premium Templates</strong> <span style="color:#64748b;">— portfolios, resumes &amp; branding kits</span>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td width="26" valign="top" style="padding-top:1px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"><tr><td style="width:20px;height:20px;background:#0ea5e9;border-radius:50%;text-align:center;font-size:11px;font-weight:700;color:#ffffff;line-height:20px;">&#10003;</td></tr></table>
+                          </td>
+                          <td style="padding-left:12px;font-size:15px;color:#0f172a;line-height:1.6;">
+                            <strong>Personal Subscription Coupon</strong> <span style="color:#64748b;">— a member-only discount code sent to you at launch</span>
                           </td>
                         </tr>
                       </table>
@@ -153,8 +122,11 @@ export const waitlistUpdateTemplate: BroadcastTemplate = {
             <!-- Body Copy + CTA -->
             <tr>
               <td style="padding:0 36px 36px;">
+                <p style="margin:0 0 16px;font-size:17px;font-weight:700;color:#0f172a;">
+                  Launch is very, very close.
+                </p>
                 <p style="margin:0 0 16px;font-size:16px;line-height:1.8;color:#475569;">
-                  Blox is an AI-powered platform built to make professional branding fast, accessible, and effortless — portfolios, resumes, and branding kits, all in one place. We're almost ready.
+                  Blox is an AI-powered platform built to make professional branding fast, accessible, and effortless — portfolios, resumes, and branding kits, all in one place.
                 </p>
                 <p style="margin:0 0 28px;font-size:16px;line-height:1.8;color:#475569;">
                   Know someone who's been putting off building their online presence? Send them to Blox before we launch. They'll get in early too.
@@ -194,6 +166,8 @@ export const waitlistUpdateTemplate: BroadcastTemplate = {
 </html>`,
   text: `Hi {{{FIRST_NAME|there}}},
 
+Quick note: If you got a mistaken or duplicate email from us recently, please ignore it — sorry about that mix-up!
+
 Thank you for joining the Blox waitlist. You signed up before most people even knew we existed — and that means something to us.
 
 As a founding member, you've unlocked exclusive perks that won't be available once we open to the public:
@@ -202,8 +176,11 @@ As a founding member, you've unlocked exclusive perks that won't be available on
   ✓ 40% Off Your Second Month — founder pricing, never available publicly
   ✓ Priority Early Access — get in before anyone else
   ✓ Exclusive Premium Templates — portfolios, resumes & branding kits
+  ✓ Personal Subscription Coupon — a member-only discount code sent to you at launch
 
-Blox is an AI-powered platform built to make professional branding fast, accessible, and effortless — portfolios, resumes, and branding kits, all in one place. We're almost ready.
+**Launch is very, very close.**
+
+Blox is an AI-powered platform built to make professional branding fast, accessible, and effortless — portfolios, resumes, and branding kits, all in one place.
 
 Know someone who's been putting off building their online presence? Send them to Blox before we launch. They'll get in early too.
 
