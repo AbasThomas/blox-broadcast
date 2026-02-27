@@ -1,0 +1,5 @@
+email,first_name,last_name,signup_date,plan,score
+alex@example.com,Alex,Johnson,2026-02-21,starter,12
+sam@example.com,Sam,Lee,2026-02-22,pro,48
+invalid-email,Pat,Stone,2026-02-23,starter,5
+
